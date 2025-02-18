@@ -1,7 +1,208 @@
----
-title: "YAYA"
-author: "Nazrul"
-date: "2025-02-18"
-output: html_document
----
-mongoloid
+Load Libraries
+```{r}
+library(dlm)
+library(tseries)
+library(tidyverse)
+library(ggplot2)
+
+setwd("~/IMPORTANT_FILES/Bocconi/YR2SEM2/Time Series/Assignment_1")
+df <- read.table("gistemp.txt", header = TRUE, sep = ",")
+```
+
+Functions
+```{r}
+## Function takes dataframe and returns timeseries object
+TimeSeries = function(year_vector, df){
+  df2 = df %>% filter(Year %in% year_vector)
+  matrix = as.matrix(df2[, 2:13])
+  tsvector = as.vector(t(matrix))
+  ts = ts(data = tsvector, freq = 12)
+  return(ts)
+} 
+
+## Function that takes decomposed ts object and returns a dataframe
+DecomposedDF = function(year_vector = year_vector0, df, method = "decompose"){
+  if (method == "decompose"){
+    dc = decompose(TimeSeries(year_vector, df), type = "additive")
+    dc$remainder = dc$random
+  } 
+  else if (method == "stl"){
+    dc = stl(TimeSeries(year_vector0, df), s.window = 'periodic')
+    dc = as.data.frame(dc$time.series)
+    dc$x = as.vector(TimeSeries(year_vector0, df))
+  }
+  month = rep(month.abb, length.out = length(TimeSeries(year_vector, df)))
+  month_n = rep(1:12, length.out = length(TimeSeries(year_vector, df)))
+  year = rep(year_vector, each=12)
+  original = as.vector(dc$x)
+  seasonal = as.vector(dc$seasonal)
+  trend = as.vector(dc$trend)
+  residual = as.vector(dc$remainder)
+  
+  dfnew = data.frame(year, month, month_n, original, seasonal, trend, residual)
+  
+  dfnew = dfnew %>% mutate(weather_season = case_when(
+    month %in% c("Dec", "Jan", "Feb") ~ "Wi",
+    month %in% c("Mar", "Apr", "May") ~ "Sp",
+    month %in% c("Jun", "Jul", "Aug") ~ "Su",
+    month %in% c("Sep", "Oct", "Nov") ~ "Fa"
+  )) %>% mutate(date = paste(year, month_n, "01", sep = "-"))
+  
+  dfnew$date2 = as.Date(dfnew$date)
+  
+  return(dfnew)
+}
+
+
+## Function returns graph of fitted seasonality, trend, and residuals.
+f = function(year_vector, df, yr=c(0), graph = "seasonal", color = FALSE, method = "decompose"){
+  
+  dfnew = DecomposedDF(year_vector = year_vector, df = df, method = method)
+  dfnew2 = dfnew %>% filter(year %in% yr)
+
+  if (color == TRUE){
+    if (any(yr == c(0))) {
+      return(ggplot(dfnew, aes(x = date2, 
+                               y = !!sym(graph), 
+                               color = weather_season,
+                               group = 1)) + 
+      geom_line() + 
+      scale_color_manual(values = c('Wi' = "blue",
+                                  'Sp' = "green",
+                                  'Su' = "red",
+                                  'Fa' = "black")) +
+      labs(x = "month", y = "Seasonal Fit") + 
+      theme_minimal())
+    }
+    else {
+      return(ggplot(dfnew2, aes(x = date2, 
+                                y = !!sym(graph), 
+                                color = weather_season, 
+                                group = 1)) + 
+      geom_line() +
+      scale_color_manual(values = c('Wi' = "blue",
+                                    'Sp' = "green",
+                                    'Su' = "red",
+                                    'Fa' = "black")) + 
+      labs(x = "month", y = "Seasonal Fit") + 
+      theme_minimal())  
+    }
+    }
+  else if (color == FALSE){
+    if (any(yr == c(0))) {
+      return(ggplot(dfnew, aes(x = date2, 
+                               y = !!sym(graph))) + 
+      geom_line(color = "blue") + 
+      labs(x = "month", y = "Seasonal Fit") + 
+      theme_minimal())
+    }
+    else {
+      return(ggplot(dfnew2, aes(x = date2, 
+                                y = !!sym(graph))) + 
+      geom_line(color = "blue") +
+      labs(x = "month", y = "Seasonal Fit") + 
+      theme_minimal())  
+    }
+  }
+}
+```
+
+## Task 1: Code
+Task 1: Decomposition Plots
+```{r, fig.width=20, fig.height=10}
+
+year_vector0 = df$Year
+year_vector1 = df$Year[1:51]
+year_vector2 = df$Year[51:101]
+year_vector3 = df$Year[101:length(df$Year)]
+
+## Need Justification of if an additive/multiplicative decomposition is used. 
+plot(TimeSeries(year_vector0, df))
+
+
+## Eyeballing it, it seems that seasonal variation remains relatively constant at every level. The size of the seasonal effect does not seem to be proportional to the level of the time series. 
+
+## Thus, seems that an additive decomposition is more appropriate for our analysis.
+
+## Decompositions using decompoe/stl function
+
+plot(decompose(TimeSeries(year_vector0, df), type = "additive"))
+
+plot(stl(TimeSeries(year_vector0, df), s.window = 'periodic'))
+```
+
+Specific Plots
+```{r, fig.width=20, fig.height=5}
+df <- read.table("gistemp.txt", header = TRUE, sep = ",")
+year_vector0 = df$Year
+
+"Plot of Seasonality"
+f(year_vector = year_vector0, 
+  df = df, 
+  yr = c(2000:2003), 
+  graph = "seasonal", 
+  color = TRUE,
+  method = "decompose")
+
+"Plot of Trend"
+f(year_vector = year_vector0, 
+  df=df, 
+  graph = "trend", 
+  color = FALSE,
+  method = "decompose")
+
+"Plot of Residuals"
+f(year_vector = year_vector0, 
+  df=df, 
+  yr = c(2010:2024), 
+  graph = "residual", 
+  color = FALSE,
+  method = "decompose")
+```
+
+## Task 1: Answers
+
+1. What long-term trends are visible in the temperature data?
+-- Upwards trend in temperature
+
+2. Are there periods of acceleration or deceleration in warming?
+-- You can see this in the seasonality. Periods of acceleration + periods of deceleration. Periods of acceleration starting from summer and deceleration. 
+
+
+3. Can you interpret the seasonal pattern?
+-- Due to the weather seasons. But strange with 
+
+4. Is the seasonality constant or time–varying? Explain how different R functions tackle the problem; then try all possible corresponding decomposition and pick the one you reckon is the most suitable for the data.
+-- Justify using the argument mentioned previously 
+
+5. Briefly comment on the variation that is unexplained by the decomposition. Are there
+anomalies in the residuals?
+-- ?? 
+
+## Task 2: Code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
