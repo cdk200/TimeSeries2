@@ -179,10 +179,6 @@ plot(decompose(TimeSeries(df$Year[1:48], df)))
 
 ```
 
-
-
-
-
 ## Task 1: Answers
 
 1. What long-term trends are visible in the temperature data?
@@ -206,7 +202,30 @@ anomalies in the residuals?
 
 ```{r}
 
+
+year_vector4 = c(1880:1930)
+
+df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "decompose")
+df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "decompose")
+
+df3 = df3 %>% filter(year %in% c(1931:1940)) 
+
+HW_temp = HoltWinters(ts(na.omit(df2$trend), freq = 12)) 
+HW_temp_forecast = forecast(HW_temp, h = 120)
+
+df3 = df3 %>% mutate(forecasted_trend = HW_temp_forecast$mean)
+
+plot(x = df3$date2, y = df3$trend, type = "l", col = "red")
+lines(x = df3$date2, y = df3$forecasted_trend, col = "blue")
+
+plot(x = df3$date2, y = df3$forecasted_trend, lty=2, col = "blue")
 ```
+
+
+
+
+
+
 
 
 
