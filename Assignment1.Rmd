@@ -4,6 +4,8 @@ library(dlm)
 library(tseries)
 library(tidyverse)
 library(ggplot2)
+library(forecast)
+
 
 setwd("~/IMPORTANT_FILES/Bocconi/YR2SEM2/Time Series/Assignment_1")
 df <- read.table("gistemp.txt", header = TRUE, sep = ",")
@@ -126,23 +128,37 @@ plot(TimeSeries(year_vector0, df))
 
 ## Decompositions using decompoe/stl function
 
+
+lambda = BoxCox.lambda(TimeSeries(year_vector0, df))
+cat("Estimated Lambda:", lambda, "\n")
+
+
 plot(decompose(TimeSeries(year_vector0, df), type = "additive"))
 
-plot(stl(TimeSeries(year_vector0, df), s.window = 'periodic'))
+plot(stl(TimeSeries(year_vector3, df), s.window = 'periodic'))
 ```
 
 Specific Plots
 ```{r, fig.width=20, fig.height=5}
 df <- read.table("gistemp.txt", header = TRUE, sep = ",")
-year_vector0 = df$Year
+
+first = df$Year[1:48]
+second = df$Year[49: 96]
+third = df$Year[97:145]
+
+length(df$Year)
 
 "Plot of Seasonality"
+
+year_vector = c()
+
 f(year_vector = year_vector0, 
   df = df, 
-  yr = c(2000:2003), 
-  graph = "seasonal", 
-  color = TRUE,
-  method = "decompose")
+  yr = c(0), 
+  graph = "original", 
+  color = FALSE,
+  method = "stl")
+
 
 "Plot of Trend"
 f(year_vector = year_vector0, 
@@ -154,11 +170,18 @@ f(year_vector = year_vector0,
 "Plot of Residuals"
 f(year_vector = year_vector0, 
   df=df, 
-  yr = c(0), 
+  yr = c(2000:2015), 
   graph = "residual", 
   color = FALSE,
   method = "decompose")
+
+plot(decompose(TimeSeries(df$Year[1:48], df)))
+
 ```
+
+
+
+
 
 ## Task 1: Answers
 
@@ -182,9 +205,6 @@ anomalies in the residuals?
 ## Task 2: Code
 
 ```{r}
-
-
-
 
 ```
 
