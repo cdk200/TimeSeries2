@@ -154,7 +154,7 @@ f(year_vector = year_vector0,
 "Plot of Residuals"
 f(year_vector = year_vector0, 
   df=df, 
-  yr = c(2010:2024), 
+  yr = c(0), 
   graph = "residual", 
   color = FALSE,
   method = "decompose")
@@ -180,6 +180,20 @@ anomalies in the residuals?
 -- ?? 
 
 ## Task 2: Code
+
+```{r}
+
+
+
+
+```
+
+
+
+
+
+
+
 
 
 
