@@ -13,6 +13,8 @@ df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 
 Functions
 ```{r}
+
+LLL
 ## Function takes dataframe and returns timeseries object
 TimeSeries = function(year_vector, df){
   df2 = df %>% filter(Year %in% year_vector)
@@ -205,8 +207,8 @@ anomalies in the residuals?
 
 year_vector4 = c(1880:1930)
 
-df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "decompose")
-df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "decompose")
+df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "stl")
+df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "stl")
 
 df3 = df3 %>% filter(year %in% c(1931:1940)) 
 
