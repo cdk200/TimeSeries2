@@ -14,7 +14,7 @@ df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 Functions
 ```{r}
 
-LLL
+LLLLLL
 ## Function takes dataframe and returns timeseries object
 TimeSeries = function(year_vector, df){
   df2 = df %>% filter(Year %in% year_vector)
