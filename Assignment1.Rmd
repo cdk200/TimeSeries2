@@ -14,28 +14,42 @@ df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 Functions
 ```{r}
 ## Function takes dataframe and returns timeseries object
-TimeSeries = function(year_vector, df){
-  df2 = df %>% filter(Year %in% year_vector)
-  matrix = as.matrix(df2[, 2:13])
+TimeSeries = function(start_year, end_year, df){
+  matrix = as.matrix(df[, 2:13])
   tsvector = as.vector(t(matrix))
-  ts = ts(data = tsvector, freq = 12)
-  return(ts)
+  ts = ts(data = tsvector, freq = 12, start = c(1880,1))
+  return(window(ts,
+                start = c(start_year, 1),
+                end = c(end_year, 12)))
 } 
 
 ## Function that takes decomposed ts object and returns a dataframe
-DecomposedDF = function(year_vector = year_vector0, df, method = "decompose"){
+DecomposedDF = function(start_year, end_year, df, method = "decompose", t=NULL, s = "periodic"){
   if (method == "decompose"){
-    dc = decompose(TimeSeries(year_vector, df), type = "additive")
+    dc = decompose(TimeSeries(start_year, 
+                              end_year, 
+                              df),
+                   type = "additive")
     dc$remainder = dc$random
   } 
   else if (method == "stl"){
-    dc = stl(TimeSeries(year_vector0, df), s.window = 'periodic')
+    dc = stl(TimeSeries(start_year, 
+                        end_year, 
+                        df), 
+             s.window = s,
+             t.window = t)
     dc = as.data.frame(dc$time.series)
-    dc$x = as.vector(TimeSeries(year_vector0, df))
+    dc$x = as.vector(TimeSeries(start_year, 
+                                end_year, 
+                                df))
   }
-  month = rep(month.abb, length.out = length(TimeSeries(year_vector, df)))
-  month_n = rep(1:12, length.out = length(TimeSeries(year_vector, df)))
-  year = rep(year_vector, each=12)
+  month = rep(month.abb, length.out = length(TimeSeries(start_year,
+                                                        end_year,
+                                                        df)))
+  month_n = rep(1:12, length.out = length(TimeSeries(start_year, 
+                                                     end_year, 
+                                                     df)))
+  year = rep(c(start_year:end_year), each=12)
   original = as.vector(dc$x)
   seasonal = as.vector(dc$seasonal)
   trend = as.vector(dc$trend)
@@ -57,9 +71,14 @@ DecomposedDF = function(year_vector = year_vector0, df, method = "decompose"){
 
 
 ## Function returns graph of fitted seasonality, trend, and residuals.
-f = function(year_vector, df, yr=c(0), graph = "seasonal", color = FALSE, method = "decompose"){
+f = function(start_year, end_year, df, yr=c(0), graph = "seasonal", color = FALSE, method = "decompose", t=NULL, s = "periodic"){
   
-  dfnew = DecomposedDF(year_vector = year_vector, df = df, method = method)
+  dfnew = DecomposedDF(start_year,
+                       end_year,
+                       df = df, 
+                       method = method,
+                       t=t,
+                       s=s)
   dfnew2 = dfnew %>% filter(year %in% yr)
 
   if (color == TRUE){
@@ -109,104 +128,50 @@ f = function(year_vector, df, yr=c(0), graph = "seasonal", color = FALSE, method
 }
 ```
 
-## Task 1: Code
-Task 1: Decomposition Plots
-```{r, fig.width=20, fig.height=10}
-
-year_vector0 = df$Year
-year_vector1 = df$Year[1:51]
-year_vector2 = df$Year[51:101]
-year_vector3 = df$Year[101:length(df$Year)]
-
-## Need Justification of if an additive/multiplicative decomposition is used. 
-plot(TimeSeries(year_vector0, df))
-
-
-## Eyeballing it, it seems that seasonal variation remains relatively constant at every level. The size of the seasonal effect does not seem to be proportional to the level of the time series. 
-
-## Thus, seems that an additive decomposition is more appropriate for our analysis.
-
-## Decompositions using decompoe/stl function
-
-
-lambda = BoxCox.lambda(TimeSeries(year_vector0, df))
-cat("Estimated Lambda:", lambda, "\n")
-
-
-plot(decompose(TimeSeries(year_vector0, df), type = "additive"))
-
-plot(stl(TimeSeries(year_vector3, df), s.window = 'periodic'))
-```
-
 Specific Plots
 ```{r, fig.width=20, fig.height=5}
 df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 
-first = df$Year[1:48]
-second = df$Year[49: 96]
-third = df$Year[97:145]
-
-length(df$Year)
-
 "Plot of Seasonality"
 
-year_vector = c()
-
-f(year_vector = year_vector0, 
-  df = df, 
-  yr = c(0), 
-  graph = "original", 
-  color = FALSE,
-  method = "stl")
 
 
 "Plot of Trend"
-f(year_vector = year_vector0, 
+f(start_year = 1880,
+  end_year = 2024,
   df=df, 
-  graph = "trend", 
-  color = FALSE,
-  method = "decompose")
+  graph = "seasonal", 
+  color = TRUE,
+  method = "stl",
+  t=151,
+  s = 7,
+  yr = c(0))
 
-"Plot of Residuals"
-f(year_vector = year_vector0, 
-  df=df, 
-  yr = c(2000:2015), 
-  graph = "residual", 
-  color = FALSE,
-  method = "decompose")
+plot(decompose(TimeSeries(start_year= 1880, end_year = 1930, df)))
 
-plot(decompose(TimeSeries(df$Year[1:48], df)))
+plot(stl(TimeSeries(start_year = 1880, end_year = 2024, df), s.window = 7, t.window = 151))
+
+f(start_year = 1880,
+  end_year = 2024,
+  df = df, 
+  yr = c(2001:2015), 
+  graph = "original", 
+  color = TRUE,
+  method = "stl",
+  t = 151,
+  s = 11)
+
 
 ```
 
-## Task 1: Answers
-
-1. What long-term trends are visible in the temperature data?
--- Upwards trend in temperature
-
-2. Are there periods of acceleration or deceleration in warming?
--- You can see this in the seasonality. Periods of acceleration + periods of deceleration. Periods of acceleration starting from summer and deceleration. 
-
-
-3. Can you interpret the seasonal pattern?
--- Due to the weather seasons. But strange with 
-
-4. Is the seasonality constant or time–varying? Explain how different R functions tackle the problem; then try all possible corresponding decomposition and pick the one you reckon is the most suitable for the data.
--- Justify using the argument mentioned previously 
-
-5. Briefly comment on the variation that is unexplained by the decomposition. Are there
-anomalies in the residuals?
--- ?? 
-
-## Task 2: Code
 
 ```{r}
 
-
+year_vector0 = df$Year
 year_vector4 = c(1880:1930)
 
-df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "decompose")
-df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "decompose")
+df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "stl")
+df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "stl")
 
 df3 = df3 %>% filter(year %in% c(1931:1940)) 
 
@@ -222,6 +187,89 @@ plot(x = df3$date2, y = df3$forecasted_trend, lty=2, col = "blue")
 ```
 
 
+HoltWinters Forecasted Trend
+```{r}
+
+t = 151
+s = 7
+
+################# Original Extracted Trend
+temp_stl_original = stl(TimeSeries(start_year = 1880,
+                                   end_year = 2024,
+                                   df = df),
+                        s.window = "periodic")
+temp_trend_original = temp_stl_original$time.series[,2]
+
+################# No Initial Start Values 
+temp_1930 = TimeSeries(start_year = 1880,
+                              end_year = 1930,
+                              df = df)
+temp_1930_stl = stl(temp_1930, 
+                    s.window = s,
+                    t.window = t)
+HW_1930 = HoltWinters(temp_1930_stl$time.series[,2])
+HW_1930_forecast = forecast(HW_1930, h = 40)
+HW_1930_onestep = HW_1930$fitted[,1]
+
+################# Different Initial Start Values
+temp_1930 = TimeSeries(start_year = 1880,
+                              end_year = 1930,
+                              df = df)
+temp_1930_stl = stl(temp_1930, 
+                    s.window = s,
+                    t.window = t)
+HW_1930_diff = HoltWinters(temp_1930_stl$time.series[,2],
+                        optim.start = c(0,0.2,0.2))
+HW_1930_forecast_diff = forecast(HW_1930_diff, h = 1000)
+HW_1930_onestep_diff = HW_1930_diff$fitted[,1]
+
+plot(temp_trend_original)
+lines(HW_1930_forecast_diff$mean, col = "green")
+lines(HW_1930_onestep_diff, col = "blue")
+```
+
+
+```{r}
+temp_stl_original = stl(TimeSeries(start_year = 1880,
+                                   end_year = 1930,
+                                   df = df),
+                        s.window = "periodic",
+                        t.window = 101)
+plot(temp_stl_original)
+
+
+```
+
+
+HoltWinters Forecasted Original
+```{r}
+################# Original Extracted Trend
+temp_original = TimeSeries(start_year = 1880,
+                                   end_year = 2024,
+                                   df = df)
+
+################# No Initial Start Values 
+temp_1930 = TimeSeries(start_year = 1880,
+                              end_year = 1930,
+                              df = df)
+HW_1930 = HoltWinters(temp_1930)
+HW_1930_forecast = forecast(HW_1930, h = 40)
+HW_1930_onestep = HW_1930$fitted[,1]
+
+################# Different Initial Start Values
+temp_1930 = TimeSeries(start_year = 1880,
+                              end_year = 1930,
+                              df = df)
+HW_1930_diff = HoltWinters(temp_1930,
+                      seasonal = "additive",
+                      optim.start = c(0,0,0))
+HW_1930_forecast_diff = forecast(HW_1930_diff, h = 1000)
+HW_1930_onestep_diff = HW_1930_diff$fitted[,1]
+
+plot(temp_original)
+lines(HW_1930_forecast_diff$mean, col = "blue")
+lines(HW_1930_onestep_diff, col = "green")
+```
 
 
 
