@@ -158,6 +158,8 @@ f(start_year = 1880,
   t = t,
   s = s)
 
+plot(stl(TimeSeries(start_year= 1880, end_year = 2024, df), s.window = s, t.window = t))
+
 ```
 
 
