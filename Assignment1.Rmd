@@ -23,6 +23,9 @@ TimeSeries = function(start_year, end_year, df){
                 end = c(end_year, 12)))
 } 
 
+
+saveRDS(TimeSeries(1880, 2024, df), file = "timeseries.rds")
+
 ## Function that takes decomposed ts object and returns a dataframe
 DecomposedDF = function(start_year, end_year, df, method = "decompose", t=NULL, s = "periodic"){
   if (method == "decompose"){
@@ -72,7 +75,6 @@ DecomposedDF = function(start_year, end_year, df, method = "decompose", t=NULL, 
 
 ## Function returns graph of fitted seasonality, trend, and residuals.
 f = function(start_year, end_year, df, yr=c(0), graph = "seasonal", color = FALSE, method = "decompose", t=NULL, s = "periodic"){
-  
   dfnew = DecomposedDF(start_year,
                        end_year,
                        df = df, 
@@ -132,58 +134,30 @@ Specific Plots
 ```{r, fig.width=20, fig.height=5}
 df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 
-"Plot of Seasonality"
 
-
-
-"Plot of Trend"
-f(start_year = 1880,
-  end_year = 2024,
-  df=df, 
-  graph = "seasonal", 
-  color = TRUE,
-  method = "stl",
-  t=151,
-  s = 7,
-  yr = c(0))
-
-plot(decompose(TimeSeries(start_year= 1880, end_year = 1930, df)))
-
-plot(stl(TimeSeries(start_year = 1880, end_year = 2024, df), s.window = 7, t.window = 151))
+s = 11
+t = 151
 
 f(start_year = 1880,
   end_year = 2024,
   df = df, 
-  yr = c(2001:2015), 
-  graph = "original", 
+  yr = c(1880:1900), 
+  graph = "seasonal", 
   color = TRUE,
   method = "stl",
-  t = 151,
-  s = 11)
+  t = t,
+  s = s)
 
+f(start_year = 1880,
+  end_year = 2024,
+  df = df, 
+  yr = c(0), 
+  graph = "trend", 
+  color = TRUE,
+  method = "stl",
+  t = t,
+  s = s)
 
-```
-
-
-```{r}
-
-year_vector0 = df$Year
-year_vector4 = c(1880:1930)
-
-df2 = DecomposedDF(year_vector = year_vector4, df=df, method = "stl")
-df3 = DecomposedDF(year_vector = year_vector0, df=df, method = "stl")
-
-df3 = df3 %>% filter(year %in% c(1931:1940)) 
-
-HW_temp = HoltWinters(ts(na.omit(df2$trend), freq = 12)) 
-HW_temp_forecast = forecast(HW_temp, h = 120)
-
-df3 = df3 %>% mutate(forecasted_trend = HW_temp_forecast$mean)
-
-plot(x = df3$date2, y = df3$trend, type = "l", col = "red")
-lines(x = df3$date2, y = df3$forecasted_trend, col = "blue")
-
-plot(x = df3$date2, y = df3$forecasted_trend, lty=2, col = "blue")
 ```
 
 
@@ -191,7 +165,9 @@ HoltWinters Forecasted Trend
 ```{r}
 
 t = 151
-s = 7
+s = 11
+
+#plot(stl(TimeSeries(start_year= 1880, end_year = 1930, df), s.window = s, t.window = t))
 
 ################# Original Extracted Trend
 temp_stl_original = stl(TimeSeries(start_year = 1880,
@@ -218,14 +194,17 @@ temp_1930 = TimeSeries(start_year = 1880,
 temp_1930_stl = stl(temp_1930, 
                     s.window = s,
                     t.window = t)
-HW_1930_diff = HoltWinters(temp_1930_stl$time.series[,2],
-                        optim.start = c(0,0.2,0.2))
+HW_1930_diff = HoltWinters(temp_1930_stl$time.series[,2])
 HW_1930_forecast_diff = forecast(HW_1930_diff, h = 1000)
 HW_1930_onestep_diff = HW_1930_diff$fitted[,1]
 
 plot(temp_trend_original)
 lines(HW_1930_forecast_diff$mean, col = "green")
 lines(HW_1930_onestep_diff, col = "blue")
+
+HW_1930_diff
+
+
 ```
 
 
