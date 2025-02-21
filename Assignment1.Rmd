@@ -134,7 +134,7 @@ f = function(start_year, end_year, df, yr=c(0), graph = "seasonal", color = FALS
 ```
 
 Specific Plots
-```{r, fig.width=20, fig.height=5}
+```{r, fig.width=20, fig.height=10}
 df <- read.table("gistemp.txt", header = TRUE, sep = ",")
 
 
@@ -161,6 +161,17 @@ f(start_year = 1880,
   t = t,
   s = s)
 
+f(start_year = 1880,
+  end_year = 1930,
+  df = df, 
+  yr = c(0), 
+  graph = "trend", 
+  color = FALSE,
+  method = "stl",
+  t = t,
+  s = s)
+
+
 plot(stl(TimeSeries(start_year= 1880, end_year = 2024, df), s.window = s, t.window = t))
 
 ```
@@ -178,7 +189,8 @@ s = 11
 temp_stl_original = stl(TimeSeries(start_year = 1880,
                                    end_year = 2024,
                                    df = df),
-                        s.window = "periodic")
+                        s.window = s,
+                        t.window = t)
 temp_trend_original = temp_stl_original$time.series[,2]
 
 ################# No Initial Start Values 
@@ -208,7 +220,6 @@ lines(HW_1930_forecast_diff$mean, col = "green")
 lines(HW_1930_onestep_diff, col = "blue")
 
 HW_1930_diff
-
 
 ```
 
